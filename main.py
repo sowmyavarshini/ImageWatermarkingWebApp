@@ -9,6 +9,7 @@ ALLOWED_EXTENSIONS = {'webp', 'png', 'jpg', 'jpeg'}
 ALLOWED_WM = {'webp', 'png', 'jpg', 'jpeg', 'txt'}
 uploads_folder_path = os.path.join(os.path.dirname(__file__), 'uploads')
 
+
 app = Flask(__name__)
 load_dotenv
 Secret_key = os.getenv("SECRET_KEY")
