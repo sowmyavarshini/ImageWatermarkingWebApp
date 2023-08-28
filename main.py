@@ -4,18 +4,15 @@ import os
 from dotenv import load_dotenv
 import io
 
-UPLOAD_FOLDER = 'uploads'
+
 ALLOWED_EXTENSIONS = {'webp', 'png', 'jpg', 'jpeg'}
 ALLOWED_WM = {'webp', 'png', 'jpg', 'jpeg', 'txt'}
-uploads_folder_path = os.path.join(os.path.dirname(__file__), 'uploads')
 
 
-app = Flask(__name__)
-load_dotenv
+load_dotenv()
 Secret_key = os.getenv("SECRET_KEY")
+app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get("SECRET_KEY", Secret_key)
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL", "sqlite:///images.db")
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 
 def allowed_file(filename):
@@ -37,21 +34,35 @@ def final_image(image_path, text, font_path, position):
     return img
 
 
-def processImage(file, watermark):
-    if watermark.filename.endswith('.txt'):
-        text = watermark.read().decode('utf-8').strip()
-        final = final_image(file, text, 'arial.ttf', (10, 10))
-    else:
-        img = Image.open(file)
-        final = img.resize((500, 500))
-        wm = Image.open(watermark)
-        wm_resize = wm.resize((70, 70))
-        final.paste(wm_resize, (10, 10), mask=wm_resize)
+def processImage(file, watermark, font_path):
+    try:
+        if watermark.filename.endswith('.txt'):
+            text = watermark.read().decode('utf-8').strip()
+            final = final_image(file, text, font_path, (10, 10))
+        else:
+            img = Image.open(file)
+            final = img.resize((500, 500))
+            wm = Image.open(watermark)
 
-    watermarked_img_stream = io.BytesIO()
-    final.save(watermarked_img_stream, format='JPEG')
-    watermarked_img_stream.seek(0)
-    return watermarked_img_stream
+            # Ensure both images are in "RGBA" mode
+            final = final.convert("RGBA")
+            wm = wm.convert("RGBA")
+
+            wm_resize = wm.resize((70, 70))
+
+            # Create a transparency mask based on the alpha channel of the watermark
+            mask = wm_resize.split()[3]  # The alpha channel
+
+            # Paste the watermark onto the final image using the mask
+            final.paste(wm_resize, (10, 10), mask=mask)
+
+        watermarked_img_stream = io.BytesIO()
+        final.save(watermarked_img_stream, format='PNG')  # Save as PNG to preserve transparency
+        watermarked_img_stream.seek(0)
+        return watermarked_img_stream
+    except ValueError as e:
+        flash("Error processing image: " + str(e))
+        return None
 
 
 @app.route('/')
@@ -65,16 +76,18 @@ def image():
     if request.method == 'POST':
         file = request.files['file']
         watermark = request.files['watermark']
+        font_path = 'static/Montserrat-Regular.ttf'
         if file and allowed_file(file.filename):
             if watermark and allowed_file1(watermark.filename):
 
-                watermarked_img_stream = processImage(file, watermark)
+                watermarked_img_stream = processImage(file, watermark, font_path)
 
                 return send_file(watermarked_img_stream,
                                  attachment_filename='watermarked.jpg',
                                  mimetype='image/jpeg')
-        flash("Invalid file or watermark format.")
-        return render_template('index.html')
+
+        flash("Invalid file or watermark format.", 'danger')
+    return render_template('index.html')
 
 
 if __name__ == '__main__':

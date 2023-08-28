@@ -15,10 +15,10 @@
 
     {% for category, message in messages %}
 
-      <div class="alert alert-success alert-dismissible fade show" role="alert">
-          {{ message | safe}}
-  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-</div>
+       <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message | safe}}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+       </div>
     {% endfor %}
   {% endif %}
 {% endwith %}
@@ -35,12 +35,7 @@
 </div>
        <button type="submit" class="btn btn-success">Apply</button>
     </form>
-      <div class="mt-4">
-<!--        {% for user in users %}-->
-<!--            <a href="{{ url_for('display_watermarked_image', user_id=user.id) }}" target="_blank">View Watermarked Image</a><br>-->
-<!--        {% endfor %}-->
-<!--    </div>-->
-    </div>
+  </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-HwwvtgBNo3bZJJLYd8oVXjrBZt8cqVSpeBNS5n7C8IVInixGAoxmnlMuBnhbgrkm" crossorigin="anonymous"></script>
   </body>
 </html>
